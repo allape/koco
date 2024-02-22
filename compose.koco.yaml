@@ -1,0 +1,20 @@
+name: koco
+services:
+  koco:
+    image: allape/koco
+#    build: docker build --build-arg https_proxy=http://host.docker.internal:1080 -t allape/koco .
+    volumes:
+      - ./openvpn-config:/etc/openvpn
+      - ./templates:/app/templates
+    ports:
+      - 8080:8080
+      - 1194:1194/udp
+    environment:
+      - GIN_MODE=release
+      - KOCO_BIND=
+      - KOCO_ALLOWED_IP=127.0.0.1,172.19.0.1
+      - OVPN_BIN_PATH=
+      - OVPN_CA_PASSWORD=
+      - OVPN_DOCKER_EXEC_COMMAND=
+    cap_add:
+      - NET_ADMIN

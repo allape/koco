@@ -1,0 +1,7 @@
+.idea
+.vscode
+
+koco
+__debug_*
+
+openvpn-config

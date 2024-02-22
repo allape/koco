@@ -1,0 +1,74 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenVPN Manager</title>
+    <style>
+        .client-list {
+            border-collapse: collapse;
+            td, th {
+                border: 1px solid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script lang="javascript">
+        function revokeAndDelete(name) {
+            if (!confirm('Are you sure to revoke and delete {{.Name}}? This can NOT be undone!')) {
+                return;
+            }
+            location.href=`/delete?name=${name}`;
+        }
+        function reinitialize() {
+            if (!confirm('You will lost ALL existing data, are you sure?')) {
+                return;
+            }
+            if (confirm('Two-step confirmation: click cancel to continue reinitialize')) {
+                return;
+            }
+            location.href='/reinitialize?key={{.ReinitializeAuthKey | urlescaper}}';
+        }
+    </script>
+    {{range .Errors}}
+        <div>{{.}}</div>
+    {{end}}
+    <div>
+        <a href="/add">Add Client</a>
+        |
+        <a href="javascript:reinitialize()">Reinitialize</a>
+    </div>
+    <table class="client-list">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Begin</th>
+                <th>End</th>
+                <th>Status</th>
+                <th>Config</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Clients}}
+                <tr>
+                    <td>{{.Name}}</td>
+                    <td>{{.Begin}}</td>
+                    <td>{{.End}}</td>
+                    <td>{{.Status}}</td>
+                    <td>{{.Config}}</td>
+                    <td>
+                        <a href="/download?name={{.Name | urlescaper}}" target="_blank">Download</a>
+                        <span> | </span>
+                        <a href="javascript:revokeAndDelete('{{.Name | urlescaper}}')">Revoke</a>
+                    </td>
+                </tr>
+            {{else}}
+                <tr>
+                    <td colspan="6">No clients</td>
+                </tr>
+            {{end}}
+        </tbody>
+    </table>
+</body>
+</html>

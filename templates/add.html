@@ -1,0 +1,32 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Client</title>
+</head>
+<body>
+    {{range .Errors}}
+        <div>{{.}}</div>
+    {{end}}
+    <form action="/add.do" method="post" enctype="multipart/form-data">
+        <table>
+            <tbody>
+                <tr>
+                    <td><label for="name">*Name</label></td>
+                    <td><input type="text" id="name" name="name" value="{{.ClientForm.Name}}" /></td>
+                </tr>
+                <tr>
+                    <td><label for="pass">Password</label></td>
+                    <td><input type="text" placeholder="Optional" id="pass" name="pass" value="{{.ClientForm.Pass}}" /></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <button type="submit">Submit</button>
+                        <button type="button" onclick="history.back()">Go back</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </form>
+</body>
+</html>
