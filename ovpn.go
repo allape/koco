@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
+	"github.com/allape/stdhook"
 	"log"
 	"net/url"
 	"os"
@@ -68,139 +68,22 @@ func FlashExec(cmd string, args ...string) (string, error) {
 	return string(output), nil
 }
 
-type OutputPayload struct {
-	Message string
-	Channel int
-}
-
 func InteractableExec(onColon func(channel int, line string) string, cmd string, args ...string) error {
 	log.Println("Run interactable command:", cmd, args)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-	command := exec.CommandContext(ctx, cmd, args...)
-
-	stdin, err := command.StdinPipe()
-	if err != nil {
-		return err
-	}
-	stdout, err := command.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	stderr, err := command.StderrPipe()
-	if err != nil {
-		return err
-	}
-
-	var (
-		done         = false
-		outputChan   = make(chan OutputPayload)
-		asyncErrChan = make(chan error)
-	)
-
-	defer func() {
-		done = true
-		close(outputChan)
-		close(asyncErrChan)
-	}()
-
-	go func() {
-		outputCache := []string{
-			"",
-			"",
-			"",
-		}
-		for {
-			payload, ok := <-outputChan
-			if !ok || done {
-				break
-			}
-			if payload.Channel == 1 {
-				_, _ = fmt.Fprint(os.Stdout, payload.Message)
+	config := &stdhook.Config{
+		Timeout:               2 * time.Minute,
+		TriggerWord:           ":",
+		OnlyTriggerOnLastLine: true,
+		OnTrigger:             onColon,
+		OnOutput: func(channel int, content []byte) {
+			if channel == 1 {
+				_, _ = fmt.Fprint(os.Stdout, string(content))
 			} else {
-				_, _ = fmt.Fprint(os.Stderr, payload.Message)
+				_, _ = fmt.Fprint(os.Stderr, string(content))
 			}
-			outputCache[payload.Channel] += payload.Message
-			if strings.HasSuffix(strings.TrimSpace(outputCache[payload.Channel]), ":") {
-				lines := strings.Split(outputCache[payload.Channel], "\n")
-				input := onColon(1, strings.TrimSpace(lines[len(lines)-1]))
-				if input != "" {
-					outputCache[payload.Channel] = ""
-					_, err := stdin.Write([]byte(input))
-					if err != nil {
-						if !done {
-							asyncErrChan <- err
-						}
-						break
-					}
-				}
-			}
-		}
-	}()
-
-	listenStdout := func(reader io.Reader, channelIndex int) {
-		go func() {
-			defer func() {
-				// may emit "send data into a closed channel"
-				_ = recover()
-			}()
-			eof := false
-			buffer := make([]byte, 1024)
-			for {
-				n, err := reader.Read(buffer)
-				if err != nil {
-					if err == io.EOF {
-						eof = true
-					} else {
-						if !done {
-							asyncErrChan <- err
-						}
-						break
-					}
-				}
-
-				buffer := buffer[:n]
-				if done {
-					break
-				}
-				outputChan <- OutputPayload{
-					// FIXME this can not work on non-ascii string,
-					// 		 because the bytes of a word might be split at the buffer boundary
-					Message: string(buffer),
-					Channel: channelIndex,
-				}
-
-				if eof || done {
-					if !done {
-						asyncErrChan <- nil
-					}
-					return
-				}
-			}
-		}()
+		},
 	}
-
-	listenStdout(stdout, 1)
-	listenStdout(stderr, 2)
-
-	err = command.Start()
-	if err != nil {
-		return err
-	}
-
-	select {
-	case err := <-asyncErrChan:
-		if err != nil {
-			return err
-		}
-	case <-ctx.Done():
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-	}
-
-	return nil
+	return stdhook.Hook(config, cmd, args...)
 }
 
 type Client struct {

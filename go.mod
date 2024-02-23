@@ -3,6 +3,7 @@ module github.com/allape/koco
 go 1.22.0
 
 require (
+	github.com/allape/stdhook v0.0.0-20240223135631-498fe1598032
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
 )
