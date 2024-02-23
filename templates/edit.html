@@ -12,6 +12,7 @@
 <body>
     {{range .Errors}}
         <div>{{.}}</div>
+        <hr>
     {{end}}
     <form action="{{if eq true .IsEditing}}/edit.do{{else}}/add.do{{end}}" method="post" enctype="multipart/form-data">
         <table>

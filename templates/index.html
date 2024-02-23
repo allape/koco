@@ -32,12 +32,14 @@
     </script>
     {{range .Errors}}
         <div>{{.}}</div>
+        <hr>
     {{end}}
     <div>
         <a href="/add">Add Client</a>
         |
         <a href="javascript:reinitialize()">Reinitialize</a>
     </div>
+    <hr>
     <table class="client-list">
         <thead>
             <tr>
@@ -72,5 +74,18 @@
             {{end}}
         </tbody>
     </table>
+    <hr>
+    <div>
+        <pre>Suggested config for client OVPN:</pre>
+        <pre><code># Stop using the default gateway
+route-nopull
+# Use the following gateway
+route 192.168.255.0 255.255.255.0
+# Use the following DNS
+dhcp-option DNS 192.168.255.10
+# iOS and Android specific proxies after OpenVPN is connected
+dhcp-option PROXY_HTTP 192.168.255.10 8118
+dhcp-option PROXY_HTTPS 192.168.255.10 8118</code></pre>
+    </div>
 </body>
 </html>
