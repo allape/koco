@@ -1,0 +1,43 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{if eq true .IsEditing}}Edit Client {{.ClientForm.Name}}{{else}}Add Client{{end}}</title>
+</head>
+<body>
+    {{range .Errors}}
+        <div>{{.}}</div>
+    {{end}}
+    <form action="{{if eq true .IsEditing}}/edit.do{{else}}/add.do{{end}}" method="post" enctype="multipart/form-data">
+        <table>
+            <tbody>
+                <tr {{if eq true .IsEditing}}style="display: none;"{{end}}>
+                    <td><label for="name">*Name</label></td>
+                    <td><input type="text" id="name" name="name" value="{{.ClientForm.Name}}" /></td>
+                </tr>
+                <tr {{if eq true .IsEditing}}style="display: none;"{{end}}>
+                    <td><label for="pass">Password</label></td>
+                    <td><input type="text" placeholder="Optional" id="pass" name="pass" value="{{.ClientForm.Pass}}" /></td>
+                </tr>
+                <tr>
+                    <td><label for="config">Config</label></td>
+                    <td>
+                        <textarea placeholder="" id="config" name="config" rows="5">{{.ClientForm.Config}}</textarea>
+                        <div>
+                            <pre>For example:</pre>
+                            <code>ifconfig-push 192.168.255.1 255.255.255.0</code>
+                            <pre></pre>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <button type="submit">Submit</button>
+                        <button type="button" onclick="history.back()">Go back</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </form>
+</body>
+</html>

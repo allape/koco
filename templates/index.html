@@ -60,6 +60,8 @@
                     <td>
                         <a href="/download?name={{.Name | urlescaper}}" target="_blank">Download</a>
                         <span> | </span>
+                        <a href="/edit?name={{.Name | urlescaper}}">Edit</a>
+                        <span> | </span>
                         <a href="javascript:revokeAndDelete('{{.Name | urlescaper}}')">Revoke</a>
                     </td>
                 </tr>

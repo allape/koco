@@ -1,8 +1,5 @@
 package main
 
-// Do NOT remove any file with os.Remove
-// Every operation MUST be done by os/exec with BinPath
-
 import (
 	"context"
 	"fmt"
@@ -20,7 +17,7 @@ import (
 
 var (
 	OpenVPNConfig = "/etc/openvpn"
-	EasyRSAPKI    = "/etc/openvpn/pki"
+	EasyRSAPKI    = OpenVPNConfig + "/pki"
 )
 
 var (
@@ -229,15 +226,30 @@ func ListClients() ([]*Client, error) {
 
 	// scan ccd
 	for _, client := range clients {
-		ccdPath := path.Join(OpenVPNConfig, "ccd", client.Name)
-		cmd, args := BuildCommand("cat", ccdPath)
-		content, err := FlashExec(cmd, args...)
+		content, err := GetClientConfig(client.Name)
 		if err == nil && content != "" {
 			client.Config = strings.TrimSpace(content)
 		}
 	}
 
 	return clients, nil
+}
+
+func GetClientConfig(name string) (string, error) {
+	clientConfigFilePath := path.Join(OpenVPNConfig, "ccd", name)
+	_, err := os.Stat(clientConfigFilePath)
+	if err != nil {
+		return "", err
+	}
+	content, err := os.ReadFile(clientConfigFilePath)
+	return string(content), err
+}
+
+func SetClientConfig(name, config string) error {
+	config = strings.TrimSpace(config)
+	clientConfigFilePath := path.Join(OpenVPNConfig, "ccd", name)
+	err := os.WriteFile(clientConfigFilePath, []byte(config), 0o666)
+	return err
 }
 
 func BuildClientFull(capass, name, pass string) error {
@@ -247,8 +259,7 @@ func BuildClientFull(capass, name, pass string) error {
 	}
 
 	defer func() {
-		cmd, args := BuildCommand("rm", "-Rf", path.Join(EasyRSAPKI, "reqs", name+".req"))
-		_, _ = FlashExec(cmd, args...)
+		_ = os.Remove(path.Join(EasyRSAPKI, "reqs", name+".req"))
 	}()
 
 	cmd, args := BuildCommand("easyrsa", args...)
@@ -285,13 +296,12 @@ func RevokeClient(capass, name string) error {
 	cmd, args := BuildCommand("ovpn_revokeclient", name, "remove")
 
 	defer func() {
-		var cmd string
-		var args []string
-
-		cmd, args = BuildCommand("rm", "-Rf", path.Join(EasyRSAPKI, "private", name+".key"))
-		_, _ = FlashExec(cmd, args...)
-		cmd, args = BuildCommand("rm", "-Rf", path.Join(EasyRSAPKI, "issued", name+".crt"))
-		_, _ = FlashExec(cmd, args...)
+		// cert
+		_ = os.Remove(path.Join(EasyRSAPKI, "issued", name+".crt"))
+		// private key
+		_ = os.Remove(path.Join(EasyRSAPKI, "private", name+".key"))
+		// ccd
+		_ = os.Remove(path.Join(OpenVPNConfig, "ccd", name))
 	}()
 
 	return InteractableExec(
@@ -341,10 +351,4 @@ func Initialize(capass string) error {
 		cmd,
 		args...,
 	)
-}
-
-func IsInitialized() bool {
-	cmd, args := BuildCommand("test", "-f", path.Join(OpenVPNConfig, "ovpn_env.sh"))
-	_, err := FlashExec(cmd, args...)
-	return err == nil
 }

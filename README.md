@@ -1,4 +1,4 @@
-# KOCO = Kyle's OpenVPN Certs Organizer
+# KOCO
 
 Simple web UI for managing certs of [kylemanna/docker-openvpn](https://github.com/kylemanna/docker-openvpn).
 
@@ -20,4 +20,9 @@ docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki
 # Config compose.koco.yaml to change CA password or something else
 # Start the daemon
 docker compose -f compose.koco.yaml up -d
+```
+
+# Run on the host with controlling the docker container
+```shell
+KOCO_BIND="127.0.0.1:8081" OVPN_DOCKER_EXEC_COMMAND="docker compose -f compose.koco.yaml exec koco" OPENVPN=./openvpn-config go run .
 ```

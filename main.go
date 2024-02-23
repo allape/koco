@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -61,8 +62,9 @@ func ErrorPage(ctx *gin.Context, code int, err error) {
 }
 
 type ClientForm struct {
-	Name string `form:"name"`
-	Pass string `form:"pass"`
+	Name   string `form:"name"`
+	Pass   string `form:"pass"`
+	Config string `form:"config"`
 }
 
 func main() {
@@ -99,7 +101,7 @@ func main() {
 			ErrorPage(ctx, http.StatusInternalServerError, err)
 			return
 		}
-		tmpFile, err := os.CreateTemp(os.TempDir(), "koco_*.ovpn")
+		tmpFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("koco_%s_*.ovpn", name))
 		if err != nil {
 			ErrorPage(ctx, http.StatusInternalServerError, err)
 			return
@@ -116,39 +118,107 @@ func main() {
 	})
 
 	router.GET("/add", func(ctx *gin.Context) {
-		ctx.HTML(http.StatusOK, "add.html", gin.H{})
+		ctx.HTML(http.StatusOK, "edit.html", gin.H{})
+	})
+	router.GET("/edit", func(ctx *gin.Context) {
+		name := strings.TrimSpace(ctx.Query("name"))
+		if name == "" {
+			ErrorPage(ctx, http.StatusBadRequest, errors.New("name is required for downloading .ovpn file"))
+			return
+		}
+		var clientForm ClientForm
+		clientForm.Name = name
+		clientForm.Config, _ = GetClientConfig(name)
+		ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			"IsEditing":  true,
+			"ClientForm": clientForm,
+		})
 	})
 	router.POST("/add.do", func(ctx *gin.Context) {
 		clientForm := ClientForm{}
 		err := ctx.Bind(&clientForm)
-		clientForm.Name = strings.TrimSpace(clientForm.Name)
 		if err != nil {
-			ctx.HTML(http.StatusOK, "add.html", gin.H{
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
 				"Errors":     []error{err},
 				"ClientForm": clientForm,
 			})
 			return
-		} else if clientForm.Name == "" {
-			ctx.HTML(http.StatusOK, "add.html", gin.H{
+		}
+
+		clientForm.Name = strings.TrimSpace(clientForm.Name)
+		if clientForm.Name == "" {
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
 				"Errors":     []error{errors.New("name must not be empty")},
 				"ClientForm": clientForm,
 			})
 			return
 		} else if ok, _ := regexp.MatchString("^\\w+$", clientForm.Name); !ok {
-			ctx.HTML(http.StatusOK, "add.html", gin.H{
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
 				"Errors":     []error{errors.New("name is not valid")},
 				"ClientForm": clientForm,
 			})
 			return
 		}
+
 		err = BuildClientFull(CAPassword, clientForm.Name, clientForm.Pass)
 		if err != nil {
-			ctx.HTML(http.StatusOK, "add.html", gin.H{
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
 				"Errors":     []error{err},
 				"ClientForm": clientForm,
 			})
 			return
 		}
+
+		err = SetClientConfig(clientForm.Name, clientForm.Config)
+		if err != nil {
+			log.Println("Failed to write client config into ccd:", err)
+			// ignore this error
+		}
+
+		ctx.Redirect(http.StatusSeeOther, "/")
+	})
+	router.POST("/edit.do", func(ctx *gin.Context) {
+		clientForm := ClientForm{}
+		err := ctx.Bind(&clientForm)
+		if err != nil {
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+				"Errors":     []error{err},
+				"ClientForm": clientForm,
+				"IsEditing":  true,
+			})
+			return
+		}
+
+		clientForm.Name = strings.TrimSpace(clientForm.Name)
+		if clientForm.Name == "" {
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+				"Errors":     []error{errors.New("name must not be empty")},
+				"ClientForm": clientForm,
+				"IsEditing":  true,
+			})
+			return
+		}
+
+		client, err := GetClient(clientForm.Name)
+		if err != nil || client == "" {
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+				"Errors":     []error{fmt.Errorf("client %s not found", clientForm.Name), err},
+				"ClientForm": clientForm,
+				"IsEditing":  true,
+			})
+			return
+		}
+
+		err = SetClientConfig(clientForm.Name, clientForm.Config)
+		if err != nil {
+			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+				"Errors":     []error{err},
+				"ClientForm": clientForm,
+				"IsEditing":  true,
+			})
+			return
+		}
+
 		ctx.Redirect(http.StatusSeeOther, "/")
 	})
 
