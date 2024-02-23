@@ -3,6 +3,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{if eq true .IsEditing}}Edit Client {{.ClientForm.Name}}{{else}}Add Client{{end}}</title>
+    <style>
+        input, textarea {
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
     {{range .Errors}}
@@ -17,17 +22,20 @@
                 </tr>
                 <tr {{if eq true .IsEditing}}style="display: none;"{{end}}>
                     <td><label for="pass">Password</label></td>
-                    <td><input type="text" placeholder="Optional" id="pass" name="pass" value="{{.ClientForm.Pass}}" /></td>
+                    <td>
+                        <input type="text" placeholder="Optional" id="pass" name="pass" value="{{.ClientForm.Pass}}" />
+                    </td>
                 </tr>
                 <tr>
                     <td><label for="config">Config</label></td>
                     <td>
                         <textarea placeholder="" id="config" name="config" rows="5">{{.ClientForm.Config}}</textarea>
-                        <div>
-                            <pre>For example:</pre>
-                            <code>ifconfig-push 192.168.255.1 255.255.255.0</code>
-                            <pre></pre>
-                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <code>ifconfig-push 192.168.255.10 255.255.255.0</code>
                     </td>
                 </tr>
                 <tr>
