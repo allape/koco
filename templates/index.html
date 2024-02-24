@@ -15,7 +15,7 @@
 <body>
     <script lang="javascript">
         function revokeAndDelete(name) {
-            if (!confirm('Are you sure to revoke and delete {{.Name}}? This can NOT be undone!')) {
+            if (!confirm(`Are you sure to revoke and delete ${name}? This can NOT be undone!`)) {
                 return;
             }
             location.href=`/delete?name=${name}`;
