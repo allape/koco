@@ -17,7 +17,7 @@ import (
 var (
 	CAPassword = "123456"
 	Bind       = ":8080"
-	AllowedIPs = []string{"127.0.0.1"}
+	AllowedIPs = []string{"::1", "127.0.0.1"}
 )
 
 var ReinitializeAuthKey = "0603762D-E368-4EC3-800B-5819A8BF3E0C"
@@ -138,7 +138,7 @@ func main() {
 		clientForm := ClientForm{}
 		err := ctx.Bind(&clientForm)
 		if err != nil {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusInternalServerError, "edit.html", gin.H{
 				"Errors":     []error{err},
 				"ClientForm": clientForm,
 			})
@@ -147,13 +147,13 @@ func main() {
 
 		clientForm.Name = strings.TrimSpace(clientForm.Name)
 		if clientForm.Name == "" {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusBadRequest, "edit.html", gin.H{
 				"Errors":     []error{errors.New("name must not be empty")},
 				"ClientForm": clientForm,
 			})
 			return
 		} else if ok, _ := regexp.MatchString("^\\w+$", clientForm.Name); !ok {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusBadRequest, "edit.html", gin.H{
 				"Errors":     []error{errors.New("name is not valid")},
 				"ClientForm": clientForm,
 			})
@@ -162,7 +162,7 @@ func main() {
 
 		err = BuildClientFull(CAPassword, clientForm.Name, clientForm.Pass)
 		if err != nil {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusInternalServerError, "edit.html", gin.H{
 				"Errors":     []error{err},
 				"ClientForm": clientForm,
 			})
@@ -181,7 +181,7 @@ func main() {
 		clientForm := ClientForm{}
 		err := ctx.Bind(&clientForm)
 		if err != nil {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusInternalServerError, "edit.html", gin.H{
 				"Errors":     []error{err},
 				"ClientForm": clientForm,
 				"IsEditing":  true,
@@ -191,7 +191,7 @@ func main() {
 
 		clientForm.Name = strings.TrimSpace(clientForm.Name)
 		if clientForm.Name == "" {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusBadRequest, "edit.html", gin.H{
 				"Errors":     []error{errors.New("name must not be empty")},
 				"ClientForm": clientForm,
 				"IsEditing":  true,
@@ -201,7 +201,7 @@ func main() {
 
 		client, err := GetClient(clientForm.Name)
 		if err != nil || client == "" {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusNotFound, "edit.html", gin.H{
 				"Errors":     []error{fmt.Errorf("client %s not found", clientForm.Name), err},
 				"ClientForm": clientForm,
 				"IsEditing":  true,
@@ -211,7 +211,7 @@ func main() {
 
 		err = SetClientConfig(clientForm.Name, clientForm.Config)
 		if err != nil {
-			ctx.HTML(http.StatusOK, "edit.html", gin.H{
+			ctx.HTML(http.StatusInternalServerError, "edit.html", gin.H{
 				"Errors":     []error{err},
 				"ClientForm": clientForm,
 				"IsEditing":  true,
