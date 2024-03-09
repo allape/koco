@@ -3,12 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	ipfilter "github.com/allape/gogin-ip-filter"
 	"html/template"
 	"log"
 	"net/http"
+	"net/netip"
 	"os"
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,9 @@ import (
 var (
 	CAPassword = "123456"
 	Bind       = ":8080"
-	AllowedIPs = []string{"::1", "127.0.0.1"}
+
+	Hosts    []string
+	Prefixes []netip.Prefix
 )
 
 var ReinitializeAuthKey = "0603762D-E368-4EC3-800B-5819A8BF3E0C"
@@ -30,7 +33,11 @@ func init() {
 
 	KocoAllowedIp := os.Getenv("KOCO_ALLOWED_IP")
 	if KocoAllowedIp != "" {
-		AllowedIPs = strings.Split(KocoAllowedIp, ",")
+		var err error
+		Prefixes, Hosts, err = ipfilter.ReadFile(KocoAllowedIp)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	OvpnCaPassword := os.Getenv("OVPN_CA_PASSWORD")
@@ -70,12 +77,7 @@ type ClientForm struct {
 func main() {
 	router := gin.Default()
 
-	router.Use(func(ctx *gin.Context) {
-		if !slices.Contains[[]string](AllowedIPs, ctx.ClientIP()) {
-			ErrorPage(ctx, http.StatusUnauthorized, errors.New("permission denied"))
-			ctx.Abort()
-		}
-	})
+	router.Use(ipfilter.New(Prefixes, Hosts, nil))
 
 	router.SetFuncMap(template.FuncMap{
 		"urlescaper":  template.URLQueryEscaper,
