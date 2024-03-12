@@ -6,13 +6,14 @@ services:
     volumes:
       - ./openvpn-config:/etc/openvpn
       - ./templates:/app/templates
+      - ./allowed-ip.txt:/app/allowed-ip.txt
     ports:
       - 8080:8080
       - 1194:1194/udp
     environment:
       - GIN_MODE=release
       - KOCO_BIND=
-      - KOCO_ALLOWED_IP=127.0.0.1,172.19.0.1,172.20.0.1
+      - KOCO_ALLOWED_IP=/app/allowed-ip.txt
       - OVPN_BIN_PATH=
       - OVPN_CA_PASSWORD=
       - OVPN_DOCKER_EXEC_COMMAND=

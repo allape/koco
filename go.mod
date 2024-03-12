@@ -3,13 +3,14 @@ module github.com/allape/koco
 go 1.22.0
 
 require (
+	github.com/allape/gogin-ip-filter v0.0.0-20240309062225-0d59e514042f
 	github.com/allape/stdhook v0.0.0-20240224083816-c06d096680c1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gocarina/gocsv v0.0.0-20231116093920-b87c2d0e983a
+	github.com/google/uuid v1.6.0
 )
 
 require (
-	github.com/allape/gogin-ip-filter v0.0.0-20240309062225-0d59e514042f // indirect
 	github.com/bytedance/sonic v1.11.2 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect

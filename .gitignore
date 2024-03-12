@@ -5,3 +5,4 @@ koco
 __debug_*
 
 openvpn-config
+allowed-ip.txt

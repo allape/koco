@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	ipfilter "github.com/allape/gogin-ip-filter"
+	"github.com/google/uuid"
 	"html/template"
 	"log"
 	"net/http"
@@ -19,11 +20,15 @@ var (
 	CAPassword = "123456"
 	Bind       = ":8080"
 
-	Hosts    []string
+	Hosts = []string{
+		"localhost",
+		"127.0.0.1",
+		"::1",
+	}
 	Prefixes []netip.Prefix
 )
 
-var ReinitializeAuthKey = "0603762D-E368-4EC3-800B-5819A8BF3E0C"
+var ReinitializeAuthKey = uuid.New().String()
 
 func init() {
 	KocoBind := os.Getenv("KOCO_BIND")
@@ -55,6 +60,7 @@ func IndexWithError(ctx *gin.Context, err error) {
 	if err != nil {
 		errorSet = append(errorSet, err)
 	}
+	ReinitializeAuthKey = uuid.New().String()
 	ctx.HTML(http.StatusOK, "index.html", gin.H{
 		"Errors":              errorSet,
 		"Clients":             clients,
@@ -245,6 +251,7 @@ func main() {
 			ErrorPage(ctx, http.StatusBadRequest, errors.New("key is not valid"))
 			return
 		}
+		ReinitializeAuthKey = uuid.New().String()
 		err := Initialize(CAPassword)
 		if err != nil {
 			ErrorPage(ctx, http.StatusInternalServerError, err)
